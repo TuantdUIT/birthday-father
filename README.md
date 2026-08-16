@@ -109,7 +109,7 @@ python -m http.server 8000
 
 Ảnh đặt trong `image/`, đặt tên `1.jpg` … `29.jpg` — thứ tự số chính là thứ tự xuất hiện. Muốn đổi thứ tự thì đổi tên file.
 
-Thư mục `image/` bị `.gitignore` bỏ qua, **ảnh không bao giờ được commit**. Lúc deploy, workflow tải ảnh từ kho riêng tư trên Cloudflare R2 — xem mục dưới.
+Ảnh nằm ngay trong repo. Lúc deploy, workflow chép thẳng `image/` sang bản build — không kéo từ kho ngoài nào cả. Lưu ý: repo phải để **private**, vì ảnh gia đình đi cùng mã nguồn.
 
 ## Một file duy nhất (khuyến nghị)
 
@@ -158,43 +158,37 @@ Drive chỉ hợp để **chuyển file** cho bố, không hợp để chạy tr
 ### Luồng hoạt động
 
 ```
-   git repo                  Cloudflare R2              Cloudflare Pages
- (chỉ mã nguồn)            (kho ảnh riêng tư)            (trang đã deploy)
-      │                            │                            │
-      └──── GitHub Actions ────────┘                            │
-             tải ảnh về, nén lại, gói chung với trang ──────────►│
-                                                                 │
-                                                    Cloudflare Access
-                                                   (chặn người không phận sự)
+        git repo                              Cloudflare Pages
+  (mã nguồn + thư mục image/)                  (trang đã deploy)
+             │                                        │
+             └──────── GitHub Actions ────────────────►
+                gom trang + ảnh, nén ảnh lại          │
+                                                       │
+                                          Cloudflare Access
+                                        (chặn người không phận sự)
 ```
 
-Ảnh không nằm trong git, và vì được phục vụ từ **cùng tên miền** với trang nên Cloudflare Access bảo vệ được cả trang lẫn ảnh bằng một lớp duy nhất.
+Ảnh đi kèm repo và được phục vụ từ **cùng tên miền** với trang, nên Cloudflare Access bảo vệ được cả trang lẫn ảnh bằng một lớp duy nhất. Đổi lại, repo phải để private.
 
 ### Cần chuẩn bị
 
-**1. Đưa ảnh lên R2** — tạo bucket ở Cloudflare dashboard (R2 → Create bucket), **để chế độ private**, upload thư mục `image/` vào. Sau đó tạo API token (R2 → Manage API Tokens) quyền *Object Read*.
+**1. Tạo project Pages** — Workers & Pages → Create → Pages → Direct Upload, đặt tên project. Không cần nối với GitHub.
 
-**2. Tạo project Pages** — Workers & Pages → Create → Pages → Direct Upload, đặt tên project. Không cần nối với GitHub.
-
-**3. Khai secret trong repo** (Settings → Secrets and variables → Actions):
+**2. Khai secret trong repo** (Settings → Secrets and variables → Actions):
 
 | Secret | Lấy ở đâu |
 |---|---|
-| `R2_ACCESS_KEY_ID` | Token R2 vừa tạo |
-| `R2_SECRET_ACCESS_KEY` | Token R2 vừa tạo |
-| `R2_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
-| `R2_BUCKET` | Tên bucket |
 | `CLOUDFLARE_API_TOKEN` | My Profile → API Tokens, quyền *Cloudflare Pages: Edit* |
 | `CLOUDFLARE_ACCOUNT_ID` | Góc phải dashboard |
-| `CLOUDFLARE_PROJECT` | Tên project Pages ở bước 2 |
+| `CLOUDFLARE_PROJECT` | Tên project Pages ở bước 1 |
 
-**4. Bật Cloudflare Access** — Zero Trust → Access → Applications → Add self-hosted, trỏ vào tên miền Pages, đặt policy cho phép đúng những email được xem. Miễn phí tới 50 người. Bố sẽ nhận mã một lần qua email khi vào trang.
+**3. Bật Cloudflare Access** — Zero Trust → Access → Applications → Add self-hosted, trỏ vào tên miền Pages, đặt policy cho phép đúng những email được xem. Miễn phí tới 50 người. Bố sẽ nhận mã một lần qua email khi vào trang.
 
 Xong bước này thì mỗi lần `git push` lên nhánh `main` là workflow tự chạy. Muốn chạy tay thì vào tab Actions bấm *Run workflow*.
 
 ### Workflow làm gì
 
-[.github/workflows/deploy.yml](.github/workflows/deploy.yml) — 6 bước: lấy mã nguồn → gom file trang → tải ảnh từ R2 → **kiểm tra số ảnh khớp `photoCount`** → nén ảnh xuống 900px → đẩy lên Pages.
+[.github/workflows/deploy.yml](.github/workflows/deploy.yml) — 5 bước: lấy mã nguồn → gom file trang và ảnh → **kiểm tra số ảnh khớp `photoCount`** → nén ảnh xuống 900px → đẩy lên Pages.
 
 Bước kiểm tra số ảnh là cố ý: thiếu ảnh thì trang trắng trơn mà deploy vẫn "thành công", nên để nó hỏng ngay ở CI còn hơn phát hiện lúc bố mở link.
 
@@ -202,7 +196,7 @@ Bước kiểm tra số ảnh là cố ý: thiếu ảnh thì trang trắng trơ
 
 Hai lựa chọn nhẹ hơn, đổi lại mức riêng tư thấp hơn:
 
-- **Link bí mật**: bỏ bước 4 (Access). Trang vẫn ở Cloudflare Pages với tên miền dài khó đoán, đã có sẵn `noindex` nên Google không lập chỉ mục. Bố chỉ cần bấm link, không phải nhập mã. Riêng tư ở mức "không ai tìm thấy", không phải "không ai xem được".
+- **Link bí mật**: bỏ bước 3 (Access). Trang vẫn ở Cloudflare Pages với tên miền dài khó đoán, đã có sẵn `noindex` nên Google không lập chỉ mục. Bố chỉ cần bấm link, không phải nhập mã. Riêng tư ở mức "không ai tìm thấy", không phải "không ai xem được".
 - **Không host gì cả**: nhúng thẳng 29 ảnh dạng base64 vào một file `.html` duy nhất rồi gửi qua Zalo. File khoảng 12MB, mở offline được, không server nào giữ ảnh. Đổi lại không "deploy" và khó cập nhật.
 
 ## Tối ưu trước khi gửi cho bố

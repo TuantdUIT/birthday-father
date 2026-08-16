@@ -12,12 +12,6 @@ const CONFIG = {
   photoDir:   'image/',
   photoExt:   '.jpg',
 
-  /* Địa chỉ kho ảnh bên ngoài. Để trống thì dùng photoDir ở trên.
-     Chỉ cần đến khi muốn trang tải ảnh thẳng từ một kho khác (R2, S3…)
-     thay vì kèm ảnh trong gói deploy. Workflow có thể thay giá trị này
-     lúc build, nhờ vậy địa chỉ kho không nằm trong git. */
-  photoBase: '',
-
   // Chú thích cho từng ảnh. Bỏ trống ('') thì ảnh đó không hiện chữ.
   // Chỉ số 1 = ảnh 1.jpg, chỉ số 2 = 2.jpg, …
   captions: {
@@ -293,7 +287,7 @@ const replayBtn = document.getElementById('btn-replay');
 function src(i) {
   // bản một file duy nhất: ảnh đã nằm sẵn trong trang dưới dạng data URI
   if (Array.isArray(window.PHOTOS)) return window.PHOTOS[i - 1];
-  return (CONFIG.photoBase || CONFIG.photoDir) + i + CONFIG.photoExt;
+  return CONFIG.photoDir + i + CONFIG.photoExt;
 }
 
 const Stack = (() => {

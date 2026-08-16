@@ -1,4 +1,5 @@
-# Kho ảnh gia đình — không đưa lên git
+# Ảnh trong image/ CÓ commit — trang tải thẳng từ đó lúc deploy.
+# Vì vậy repo này phải để private.
 
 # Nhạc (nếu bạn thêm file mp3)
 audio/

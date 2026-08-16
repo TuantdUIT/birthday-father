@@ -1,11 +1,9 @@
 # ══════════════════════════════════════════════════════════════
 #  Deploy trang "Thổi nến" lên Cloudflare Pages
 #
-#  Ảnh KHÔNG nằm trong git. Chúng ở một kho riêng tư trên Cloudflare R2;
-#  workflow tải về lúc build rồi gói chung vào bản deploy. Nhờ vậy:
-#    · git không bao giờ chứa ảnh
-#    · ảnh phục vụ từ cùng tên miền với trang, nên Cloudflare Access
-#      bảo vệ được cả trang lẫn ảnh bằng một lớp duy nhất
+#  Ảnh nằm ngay trong repo ở thư mục image/ — workflow chỉ việc chép sang
+#  bản build. Ảnh phục vụ từ cùng tên miền với trang, nên Cloudflare Access
+#  bảo vệ được cả trang lẫn ảnh bằng một lớp duy nhất.
 #
 #  Xem README mục "Deploy" để biết các bước cài đặt tài khoản.
 # ══════════════════════════════════════════════════════════════
@@ -31,21 +29,8 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html style.css app.js _site/
+          cp -r image _site/
           if [ -d audio ]; then cp -r audio _site/; fi
-
-      # ── Ảnh lấy từ kho riêng tư, không lấy từ git ──
-      # R2 dùng giao thức giống S3 nên xài luôn aws-cli có sẵn trên runner.
-      - name: Tải ảnh từ Cloudflare R2
-        env:
-          AWS_ACCESS_KEY_ID:     ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION:    auto
-          R2_ENDPOINT:           ${{ secrets.R2_ENDPOINT }}
-          R2_BUCKET:             ${{ secrets.R2_BUCKET }}
-        run: |
-          set -euo pipefail
-          aws s3 sync "s3://${R2_BUCKET}/image" _site/image \
-            --endpoint-url "${R2_ENDPOINT}" --only-show-errors
 
       # Thiếu ảnh thì trang trắng trơn mà vẫn deploy thành công — kiểm tra
       # số lượng khớp với photoCount để hỏng thì hỏng ngay ở đây.
@@ -56,7 +41,7 @@ jobs:
           want=$(grep -oP 'photoCount:\s*\K[0-9]+' _site/app.js)
           echo "Có $have ảnh, app.js cần $want ảnh."
           if [ "$have" -ne "$want" ]; then
-            echo "::error::Số ảnh không khớp. Sửa photoCount trong app.js hoặc kiểm tra lại kho R2."
+            echo "::error::Số ảnh không khớp. Sửa photoCount trong app.js hoặc kiểm tra lại thư mục image/."
             exit 1
           fi
 
