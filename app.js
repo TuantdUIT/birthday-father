@@ -40,7 +40,7 @@ const CONFIG = {
 
   // Vuốt lên / xuống để đổi tốc độ. Mỗi lần vuốt nhảy một nấc.
   rates:     [0.25, 0.5, 1, 1.5, 2, 3, 5],
-  rateStart: 2,       // vị trí bắt đầu trong danh sách trên (2 → ×1)
+  rateStart: 3,       // vị trí bắt đầu trong danh sách trên (3 → ×1.5)
 
   // Nếu bạn bỏ file nhạc vào audio/happy-birthday.mp3 thì trang sẽ dùng file đó.
   // Không có file thì tự chơi giai điệu Happy Birthday bằng tiếng hộp nhạc.
