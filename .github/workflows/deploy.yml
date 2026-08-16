@@ -1,0 +1,87 @@
+# ══════════════════════════════════════════════════════════════
+#  Deploy trang "Thổi nến" lên Cloudflare Pages
+#
+#  Ảnh KHÔNG nằm trong git. Chúng ở một kho riêng tư trên Cloudflare R2;
+#  workflow tải về lúc build rồi gói chung vào bản deploy. Nhờ vậy:
+#    · git không bao giờ chứa ảnh
+#    · ảnh phục vụ từ cùng tên miền với trang, nên Cloudflare Access
+#      bảo vệ được cả trang lẫn ảnh bằng một lớp duy nhất
+#
+#  Xem README mục "Deploy" để biết các bước cài đặt tài khoản.
+# ══════════════════════════════════════════════════════════════
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # cho phép bấm chạy tay từ tab Actions
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Gom file trang
+        run: |
+          mkdir -p _site
+          cp index.html style.css app.js _site/
+          if [ -d audio ]; then cp -r audio _site/; fi
+
+      # ── Ảnh lấy từ kho riêng tư, không lấy từ git ──
+      # R2 dùng giao thức giống S3 nên xài luôn aws-cli có sẵn trên runner.
+      - name: Tải ảnh từ Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    auto
+          R2_ENDPOINT:           ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET:             ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 sync "s3://${R2_BUCKET}/image" _site/image \
+            --endpoint-url "${R2_ENDPOINT}" --only-show-errors
+
+      # Thiếu ảnh thì trang trắng trơn mà vẫn deploy thành công — kiểm tra
+      # số lượng khớp với photoCount để hỏng thì hỏng ngay ở đây.
+      - name: Kiểm tra số ảnh
+        run: |
+          set -euo pipefail
+          have=$(find _site/image -maxdepth 1 -type f -name '*.jpg' | wc -l)
+          want=$(grep -oP 'photoCount:\s*\K[0-9]+' _site/app.js)
+          echo "Có $have ảnh, app.js cần $want ảnh."
+          if [ "$have" -ne "$want" ]; then
+            echo "::error::Số ảnh không khớp. Sửa photoCount trong app.js hoặc kiểm tra lại kho R2."
+            exit 1
+          fi
+
+      # Ảnh gốc 960×1280 nhưng trang chỉ hiển thị rộng tối đa ~460px CSS,
+      # nên hạ xuống 900px là dư dùng. Giữ nguyên tên file .jpg để không
+      # phải sửa gì trong app.js.
+      - name: Nén ảnh
+        run: |
+          set -euo pipefail
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y imagemagick
+          im=$(command -v magick || command -v convert)
+          before=$(du -sh _site/image | cut -f1)
+          for f in _site/image/*.jpg; do
+            "$im" "$f" -auto-orient -resize '900x1200>' -quality 82 -strip "$f"
+          done
+          echo "Kho ảnh: $before -> $(du -sh _site/image | cut -f1)"
+
+      # ── Đưa lên Cloudflare Pages ──
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy _site
+            --project-name=${{ secrets.CLOUDFLARE_PROJECT }}
+            --branch=main

@@ -1,0 +1,20 @@
+# Kho ảnh gia đình — không đưa lên git
+
+# Nhạc (nếu bạn thêm file mp3)
+audio/
+
+# Thư mục build tạm của workflow
+_site/
+image.zip
+
+# Bản gộp một file do build.py tạo — BÊN TRONG CÓ ẢNH NHÚNG.
+# Commit nhầm là ảnh lọt lên GitHub. Chặn mọi .html trừ mã nguồn.
+*.html
+!index.html
+
+# Hệ điều hành / trình soạn thảo
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/

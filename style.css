@@ -1,0 +1,608 @@
+/* ══════════════════════════════════════════════════
+   "Thổi nến" — trang chúc mừng sinh nhật bố
+   Bảng màu: nền tím-đen · nến cam-vàng · chữ kem sữa
+   ══════════════════════════════════════════════════ */
+
+:root {
+  --bg:        #0a0612;
+  --bg-2:      #150c22;
+  --flame:     #ffd76e;
+  --flame-hot: #ff9a3c;
+  --cream:     #f5e6c8;
+  --pink:      #ff4d6d;
+  --cake-a:    #f7d7c4;
+  --cake-b:    #e8b79c;
+  --frost:     #fff6ec;
+
+  /* nhịp lung lay của lửa — dùng chung cho cả quầng sáng nền */
+  --flicker: 0.9s;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+  /* mobile: bỏ ô sáng xanh khi chạm, chặn double-tap zoom, khoá cỡ chữ khi xoay */
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+button { touch-action: manipulation; }
+img { user-select: none; -webkit-user-drag: none; }
+
+/* Toàn trang không bao giờ cuộn: màn intro cố định, gallery là slideshow
+   toàn màn hình tự chạy. */
+body { overflow: hidden; }
+
+/* ─────────── khung màn hình chung ─────────── */
+.scene {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* ══════════ MÀN 1 · BÁNH KEM ══════════ */
+
+/* quầng sáng ấm — nhấp nháy CÙNG NHỊP với ngọn lửa.
+   Đây là chi tiết tạo cảm giác "thật"; thiếu nó bánh trông như hình dán. */
+.ambient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 45% at 50% 42%,
+    rgba(255, 154, 60, 0.28) 0%,
+    rgba(255, 122, 40, 0.10) 35%,
+    transparent 70%
+  );
+  animation: glow var(--flicker) ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes glow {
+  from { opacity: 0.72; transform: scale(1);    }
+  to   { opacity: 1;    transform: scale(1.04); }
+}
+
+.cake-wrap {
+  position: relative;
+  animation: float 4s ease-in-out infinite alternate;
+}
+@keyframes float {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-8px); }
+}
+
+.cake { position: relative; width: 230px; }
+
+/* ─── tầng bánh ─── */
+.tier {
+  position: relative;
+  margin: 0 auto;
+  border-radius: 8px 8px 6px 6px;
+  background: linear-gradient(175deg, var(--cake-a), var(--cake-b));
+  box-shadow:
+    inset 0 -14px 22px rgba(150, 80, 50, 0.22),
+    0 8px 26px rgba(0, 0, 0, 0.45);
+}
+.tier-top    { width: 150px; height: 62px; z-index: 3; }
+.tier-bottom { width: 230px; height: 82px; z-index: 2; margin-top: -4px; }
+
+/* lớp kem viền sóng ở mép trên mỗi tầng */
+.frosting {
+  position: absolute;
+  left: -2px; right: -2px; top: -12px;
+  height: 26px;
+  background: var(--frost);
+  border-radius: 12px;
+  /* các giọt kem chảy xuống */
+  -webkit-mask:
+    radial-gradient(circle 11px at 50% 0, transparent 0) 0 0/0 0,
+    linear-gradient(#000 0 0) 0 0/100% 14px no-repeat,
+    radial-gradient(circle 9px at center, #000 98%, transparent) 0 12px/22px 22px repeat-x;
+  mask:
+    linear-gradient(#000 0 0) 0 0/100% 14px no-repeat,
+    radial-gradient(circle 9px at center, #000 98%, transparent) 0 12px/22px 22px repeat-x;
+  filter: drop-shadow(0 3px 3px rgba(140, 80, 60, 0.25));
+}
+
+/* hạt trang trí trên thân tầng dưới */
+.dots {
+  position: absolute;
+  inset: 34px 14px auto 14px;
+  height: 30px;
+  background-image:
+    radial-gradient(circle 3px, var(--pink) 98%, transparent),
+    radial-gradient(circle 3px, #ffd76e 98%, transparent);
+  background-size: 34px 34px, 34px 34px;
+  background-position: 0 0, 17px 15px;
+  opacity: 0.75;
+}
+
+.plate {
+  width: 268px;
+  height: 12px;
+  margin: -2px auto 0;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background: linear-gradient(180deg, #d9d2e4, #8b83a0);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* ─── nến ─── */
+.candles {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 26px;
+  z-index: 4;
+}
+.candle { position: relative; width: 12px; }
+
+.stick {
+  width: 12px;
+  height: 46px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    -60deg,
+    #fff 0 6px,
+    var(--pink) 6px 12px
+  );
+  box-shadow: inset -3px 0 5px rgba(0, 0, 0, 0.18);
+}
+.wick {
+  width: 2px;
+  height: 6px;
+  margin: 0 auto;
+  background: #3a2a22;
+  border-radius: 1px;
+}
+
+.flame {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  width: 14px;
+  height: 26px;
+  margin-left: -7px;
+  margin-bottom: 2px;
+  border-radius: 50% 50% 42% 42% / 62% 62% 38% 38%;
+  background: radial-gradient(
+    ellipse at 50% 78%,
+    #fffdf0 0%,
+    var(--flame) 32%,
+    var(--flame-hot) 62%,
+    rgba(255, 90, 20, 0) 100%
+  );
+  box-shadow: 0 0 18px 6px rgba(255, 154, 60, 0.55);
+  transform-origin: 50% 100%;
+  /* lệch pha giữa 3 cây nến để không lung lay đồng loạt */
+  animation: flicker var(--flicker) ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.31s);
+}
+.flame-core {
+  position: absolute;
+  left: 50%; bottom: 3px;
+  width: 5px; height: 9px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: rgba(140, 190, 255, 0.55);
+  filter: blur(1px);
+}
+@keyframes flicker {
+  0%   { transform: scale(1)          skewX(0deg);   }
+  35%  { transform: scale(1.06, 0.96) skewX(-3deg);  }
+  70%  { transform: scale(0.95, 1.08) skewX(2.5deg); }
+  100% { transform: scale(1.03, 1.02) skewX(-1deg);  }
+}
+
+/* nhắc nhở sau 5s không ai chạm: nến rung mạnh hơn */
+body.nudge .flame { animation-duration: 0.28s; }
+
+/* khói — chỉ hiện sau khi thổi */
+.smoke {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: rgba(200, 200, 210, 0.5);
+  filter: blur(3px);
+  opacity: 0;
+}
+
+/* ─── MÀN 2 · trạng thái thổi nến ─── */
+body.blown .flame {
+  animation: blowout 0.34s cubic-bezier(.4, 0, .8, .4) forwards;
+  /* lệch 0.1s từng cây — nến không tắt cùng lúc */
+  animation-delay: calc(var(--i) * 0.1s);
+}
+@keyframes blowout {
+  0%   { transform: skewX(0deg)   scale(1);        opacity: 1; }
+  55%  { transform: skewX(38deg)  scale(0.7, 1.3); opacity: .9; }
+  100% { transform: skewX(52deg)  scale(0.1, 0.2); opacity: 0; }
+}
+
+body.blown .ambient {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.7s ease 0.3s;
+}
+
+body.blown .smoke {
+  animation: smoke 1.1s ease-out forwards;
+  animation-delay: calc(0.3s + var(--i) * 0.1s);
+}
+@keyframes smoke {
+  0%   { opacity: 0;   transform: translateY(0)     scale(1);   }
+  25%  { opacity: .55; }
+  100% { opacity: 0;   transform: translateY(-70px) scale(3.4)
+                                  translateX(14px); }
+}
+
+body.blown .hint { opacity: 0; transition: opacity .2s; pointer-events: none; }
+
+/* khoảng lặng: bánh chìm vào bóng tối trước khi pháo hoa nổ */
+body.blown .cake-wrap {
+  animation: sink 0.9s ease-in forwards;
+  animation-delay: 0.35s;
+}
+@keyframes sink {
+  to { opacity: 0; transform: scale(0.94); }
+}
+body.blown #scene-cake { pointer-events: none; }
+/* dọn hẳn màn bánh kem đi khi gallery đã lên */
+body.gallery #scene-cake { display: none; }
+
+/* ─── hướng dẫn chạm ─── */
+/* thu bánh lại trên màn nhỏ / màn thấp để không chạm vào dòng hướng dẫn */
+@media (max-width: 380px), (max-height: 680px) {
+  .cake-wrap { transform-origin: center bottom; scale: .82; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .cake-wrap { scale: .6; }
+  .hint      { bottom: 4dvh; }
+}
+
+.hint {
+  position: absolute;
+  bottom: max(12dvh, env(safe-area-inset-bottom, 0px) + 60px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.hint p {
+  font-size: 1.05rem;
+  letter-spacing: .04em;
+  animation: breathe 2s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: .45; }
+  50%      { opacity: 1;   }
+}
+.hand {
+  font-size: 1.9rem;
+  animation: tap 2s ease-in-out infinite;
+}
+@keyframes tap {
+  0%, 100% { transform: translateY(0)    scale(1);    }
+  50%      { transform: translateY(-10px) scale(1.08); }
+}
+/* vòng sóng lan ra từ vị trí ngón tay */
+.ripple {
+  position: absolute;
+  top: 8px; left: 50%;
+  width: 34px; height: 34px;
+  margin-left: -17px;
+  border: 2px solid rgba(255, 215, 110, .6);
+  border-radius: 50%;
+  animation: ripple 2s ease-out infinite;
+}
+.ripple-2 { animation-delay: 1s; }
+@keyframes ripple {
+  0%   { transform: scale(.4); opacity: .8; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+/* ══════════ MÀN 3 · PHÁO HOA & LỜI CHÚC ══════════ */
+#fx {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+body.fireworks #fx { opacity: 1; }
+/* khi gallery hiện ra, pháo hoa lùi xuống làm nền */
+body.gallery #fx { opacity: .2; }
+
+#scene-message {
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+  text-align: center;
+  padding: 0 24px;
+  transition: opacity .5s ease;
+}
+body.fireworks #scene-message { opacity: 1; }
+body.gallery   #scene-message {
+  opacity: 0;
+  transform: scale(1.15);
+  transition: opacity .8s ease, transform .8s ease;
+}
+
+.wish {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: .06em;
+}
+.wish-line {
+  font-size: clamp(1.9rem, 9vw, 4rem);
+  color: var(--cream);
+  text-shadow:
+    0 0 14px rgba(255, 215, 110, .55),
+    0 0 46px rgba(255, 154, 60, .35);
+  opacity: 0;
+}
+.wish-big {
+  font-size: clamp(3.6rem, 18vw, 8rem);
+  background: linear-gradient(180deg, #fff6d8, var(--flame) 55%, var(--flame-hot));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px rgba(255, 170, 60, .6));
+}
+.wish-sub {
+  margin-top: 18px;
+  max-width: 32ch;
+  margin-inline: auto;
+  line-height: 1.55;
+  font-size: clamp(.95rem, 4vw, 1.2rem);
+  color: rgba(245, 230, 200, .82);
+  opacity: 0;
+}
+.wish-sub + .wish-sub { margin-top: 8px; }
+body.fireworks .wish-line,
+body.fireworks .wish-sub {
+  animation: pop .75s cubic-bezier(.18, .9, .3, 1.2) forwards;
+  animation-delay: calc(var(--d) * .16s);
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(.8)  translateY(14px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);    }
+}
+
+/* ══════════ MÀN 4 · CHỒNG ẢNH TRÔI TỪ TRÊN XUỐNG ══════════
+   Các tấm ảnh xếp đè lên nhau thành một dải dài, dải đó trôi chậm
+   từ trên xuống dưới, hết ảnh 29 thì nối lại ảnh 1 — liền mạch.
+   Chạm vào tấm nào: tấm đó đứng lại, các tấm khác mờ đi. Chạm lần
+   nữa thì mọi thứ chạy tiếp. */
+#gallery {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: none;
+  overflow: hidden;
+}
+body.gallery #gallery { display: block; }
+
+/* nền mờ — lấy từ chính tấm ảnh đang được chọn, chỉ hiện khi có tấm dừng */
+.stage-bg {
+  position: absolute;
+  inset: -8%;                       /* tràn ra để blur không hở mép */
+  background: var(--shot) center / cover no-repeat;
+  filter: blur(30px) saturate(1.3) brightness(.38);
+  opacity: 0;
+  transition: opacity .8s ease;
+  pointer-events: none;
+}
+body.focused .stage-bg { opacity: 1; }
+
+.stack {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+/* cả chồng ảnh bung ra từ tâm quả pháo hoa cuối cùng (chỉ 1 lần) */
+.stack.burst {
+  animation: burst-in 1s cubic-bezier(.15, .85, .3, 1) both;
+}
+@keyframes burst-in {
+  from { opacity: 0; transform: scale(.35); filter: brightness(2.2) blur(6px); }
+  to   { opacity: 1; transform: scale(1);   filter: none; }
+}
+
+/* Dải ảnh: chứa 2 bản sao của cả 29 tấm, chạy hết bản 1 là khớp
+   đúng vào đầu bản 2 nên vòng lặp không thấy mối nối.
+   Chuyển động do JS chạy bằng Web Animations API, không phải CSS —
+   vì đổi `animation-duration` giữa chừng sẽ làm dải nhảy vị trí, còn
+   `playbackRate` thì đổi tốc độ mượt ngay tại chỗ. */
+.track {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+}
+
+/* ─── từng tấm ảnh ─── */
+.card {
+  --fs: 1;                        /* hệ số phóng to khi được chọn */
+  position: absolute;
+  top: var(--y);
+  left: calc(50% + var(--x));
+  width: var(--w);
+  margin-left: calc(var(--w) / -2);
+  aspect-ratio: 3 / 4;            /* cả 29 ảnh đều đúng 960×1280 */
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-2);
+  box-shadow:
+    0 22px 54px rgba(0, 0, 0, .68),
+    0 0 0 1px rgba(245, 230, 200, .12);
+  transform: rotate(var(--r));
+  transition: opacity .5s ease, transform .7s cubic-bezier(.22, .8, .28, 1);
+}
+.card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;              /* khung 3:4 = tỉ lệ ảnh → không cắt gì */
+  opacity: 0;
+  transition: opacity .7s ease;
+}
+.card img.ready { opacity: 1; }
+
+/* ─── trạng thái đang chọn một tấm ─── */
+body.focused .card {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Tấm được chọn: dời về đúng giữa màn hình (--tx/--ty do JS tính),
+   dựng thẳng lại và phóng to vừa khung (--fs).
+   Thứ tự quan trọng: scale chạy trước, quay quanh tâm chính nó nên
+   không làm tâm xê dịch — nhờ vậy khoảng dời tính từ kích thước gốc
+   vẫn đúng sau khi phóng to. */
+body.focused .card.focus {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 5;
+  transform:
+    translate(var(--tx, 0px), var(--ty, 0px))
+    rotate(0deg)
+    scale(var(--fs, 1));
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, .8),
+    0 0 0 1px rgba(255, 215, 110, .35);
+}
+
+/* ─── chú thích: chỉ hiện ở tấm đang được chọn ─── */
+.caption {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 2;
+  margin: 0;
+  /* Tấm ảnh bị scale khi được chọn, chữ sẽ to theo. Chia ngược lại cho
+     hệ số phóng để cỡ chữ trên màn hình luôn như nhau. */
+  padding:
+    calc(48px / var(--fs, 1))
+    calc(18px / var(--fs, 1))
+    calc(16px / var(--fs, 1));
+  background: linear-gradient(transparent, rgba(10, 6, 18, .88));
+  text-align: center;
+  font-size: calc(clamp(.92rem, 3.8vw, 1.06rem) / var(--fs, 1));
+  line-height: 1.5;
+  color: var(--cream);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .9);
+  opacity: 0;
+  transition: opacity .5s ease .2s;
+  pointer-events: none;
+}
+.card.focus .caption { opacity: 1; }
+
+/* ─── gợi ý, hiện lúc đầu rồi tự tắt ─── */
+.tap-hint {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px) + 12px);
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(10, 6, 18, .5);
+  backdrop-filter: blur(6px);
+  font-size: .82rem;
+  letter-spacing: .04em;
+  color: rgba(245, 230, 200, .8);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .8s ease;
+}
+body.gallery .tap-hint { opacity: 1; }
+body.gallery.hint-gone .tap-hint,
+body.focused .tap-hint { opacity: 0; }
+
+/* ─── báo tốc độ, hiện chớp nhoáng mỗi lần vuốt ─── */
+.speed-badge {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 11;
+  padding: 9px 20px;
+  border: 1px solid rgba(255, 215, 110, .3);
+  border-radius: 999px;
+  background: rgba(10, 6, 18, .62);
+  backdrop-filter: blur(8px);
+  color: var(--flame);
+  font-size: .95rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .05em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(6px);
+  transition: opacity .3s ease, transform .3s ease;
+}
+.speed-badge.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ══════════ NÚT ĐIỀU KHIỂN ══════════ */
+.controls {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 0px) + 10px);
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ctrl {
+  width: 46px;   /* ≥44px cho dễ bấm trên điện thoại */
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(245, 230, 200, .22);
+  border-radius: 50%;
+  background: rgba(10, 6, 18, .55);
+  backdrop-filter: blur(8px);
+  color: var(--cream);
+  cursor: pointer;
+  transition: opacity .3s, transform .15s;
+}
+.ctrl:active { transform: scale(.9); }
+.ctrl svg { width: 22px; height: 22px; fill: currentColor; }
+#btn-replay { font-size: 1.15rem; line-height: 1; }
+.ctrl .ico-off { display: none; }
+body.muted .ctrl .ico-on  { display: none; }
+body.muted .ctrl .ico-off { display: block; }
+
+/* ══════════ TÔN TRỌNG prefers-reduced-motion ══════════
+   Bỏ Ken Burns và các chuyển động lớn, giữ nguyên phần còn lại. */
+@media (prefers-reduced-motion: reduce) {
+  /* dải ảnh không tự trôi nữa — người xem tự cuộn lấy */
+  .track { animation: none; transform: none; }
+  .stack { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .stack.burst  { animation: none; }
+  .cake-wrap    { animation: none; }
+  .ambient      { animation: none; opacity: .9; }
+  .hand, .ripple { animation: none; }
+  .card { transition-duration: .2s; }
+  .card.focus .caption { transition-duration: .2s; }
+}
